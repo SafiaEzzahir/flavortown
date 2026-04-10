@@ -169,6 +169,7 @@ class ProjectsController < ApplicationController
     authorize @project
     prepare_space_themed_form_state!(space_themed: @project.space_themed?)
     load_project_times
+    @locked_hackatime_names = locked_hackatime_names
   end
 
   def update
@@ -604,9 +605,15 @@ class ProjectsController < ApplicationController
   end
 
   def link_hackatime_projects
-    # Unlink hackatime projects that were removed
+    locked = locked_hackatime_names
+
+    # Unlink hackatime projects that were removed, but block locked ones
     @project.hackatime_projects.where.not(id: hackatime_project_ids).find_each do |hp|
-      hp.update(project: nil)
+      if locked.include?(hp.name)
+        @project.errors.add(:base, "\"#{hp.name}\" can't be removed — it was used in a devlog")
+      else
+        hp.update(project: nil)
+      end
     end
 
     return if hackatime_project_ids.empty?
@@ -617,6 +624,15 @@ class ProjectsController < ApplicationController
           @project.errors.add(:base, "Hackatime project #{hp.name}: #{message}")
         end
       end
+    end
+  end
+
+  # Returns the set of hackatime project names that appear in any non-deleted devlog
+  # for this project. These keys are locked and cannot be unlinked.
+  def locked_hackatime_names
+    @locked_hackatime_names ||= begin
+      snapshots = @project.devlogs.pluck(:hackatime_projects_key_snapshot).compact
+      snapshots.flat_map { |s| s.split(",").map(&:strip) }.uniq
     end
   end
 

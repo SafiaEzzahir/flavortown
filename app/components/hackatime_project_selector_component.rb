@@ -3,9 +3,9 @@
 class HackatimeProjectSelectorComponent < ViewComponent::Base
   COLORS = %i[red blue green yellow].freeze
 
-  attr_reader :label, :color, :subtitle, :form, :attribute, :projects, :project_times
+  attr_reader :label, :color, :subtitle, :form, :attribute, :projects, :project_times, :locked_project_names
 
-  def initialize(label:, form:, attribute:, color: :blue, subtitle: nil, projects: [], project_times: {})
+  def initialize(label:, form:, attribute:, color: :blue, subtitle: nil, projects: [], project_times: {}, locked_project_names: [])
     @label = label
     @form = form
     @attribute = attribute
@@ -13,6 +13,7 @@ class HackatimeProjectSelectorComponent < ViewComponent::Base
     @subtitle = subtitle
     @projects = projects
     @project_times = project_times
+    @locked_project_names = Array(locked_project_names)
   end
 
   def input_classes
@@ -42,7 +43,9 @@ class HackatimeProjectSelectorComponent < ViewComponent::Base
   def initial_projects
     record = form.object
     if record.respond_to?(:hackatime_projects)
-      record.hackatime_projects.select(:id, :name).map { |hp| { id: hp.id, name: hp.name } }
+      record.hackatime_projects.select(:id, :name).map do |hp|
+        { id: hp.id, name: hp.name, locked: locked_project_names.include?(hp.name) }
+      end
     else
       []
     end

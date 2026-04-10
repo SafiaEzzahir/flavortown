@@ -134,6 +134,34 @@
     }
   }
 
+  &__admin-hackatime-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: var(--space-s) var(--space-l);
+    background: #1e1b4b;
+    border: 1px solid #4338ca;
+    border-radius: var(--border-radius);
+    color: #c7d2fe;
+    margin-bottom: var(--space-m);
+    font-size: var(--font-size-s);
+
+    strong {
+      color: #a5b4fc;
+      white-space: nowrap;
+    }
+
+    code {
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid #4338ca;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: var(--font-size-xs);
+      color: #e0e7ff;
+    }
+  }
+
   &::before {
     content: "";
     position: absolute;

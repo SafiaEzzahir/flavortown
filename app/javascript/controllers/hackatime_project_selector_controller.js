@@ -6,6 +6,7 @@ export default class extends Controller {
 
   connect() {
     this.selectedProjects = new Set();
+    this.lockedProjects = new Set();
     // Seed initial selected projects if provided as values
     if (
       this.hasInitialProjectsValue &&
@@ -15,9 +16,11 @@ export default class extends Controller {
       seeds.forEach(async (proj) => {
         const id = String(proj.id);
         const name = proj.name || `Project ${id}`;
+        const locked = proj.locked === true;
         if (!this.selectedProjects.has(id)) {
           this.selectedProjects.add(id);
-          await this.renderSelectedProject(id, name);
+          if (locked) this.lockedProjects.add(id);
+          await this.renderSelectedProject(id, name, locked);
         }
       });
     }
@@ -47,6 +50,8 @@ export default class extends Controller {
 
   removeProject(event) {
     const projectId = event.currentTarget.dataset.projectId;
+    if (this.lockedProjects.has(projectId)) return;
+
     this.selectedProjects.delete(projectId);
 
     const projectElement = event.currentTarget.closest(
@@ -65,14 +70,13 @@ export default class extends Controller {
     return `${hours}h ${minutes}m`;
   }
 
-  async renderSelectedProject(projectId, projectName) {
+  async renderSelectedProject(projectId, projectName, locked = false) {
     const projectIconPath =
       this.element.dataset.projectIconPath || "/assets/icons/rocket.svg";
     const closeIconPath =
       this.element.dataset.closeIconPath || "/assets/icons/close.svg";
 
     const rocketSvg = await this.loadSvgAsInline(projectIconPath, 24);
-    const closeSvg = await this.loadSvgAsInline(closeIconPath, 20);
 
     const projectTimes = this.hasProjectTimesValue
       ? this.projectTimesValue
@@ -80,8 +84,19 @@ export default class extends Controller {
     const totalSeconds = projectTimes[projectName] || 0;
     const timeDisplay = this.formatTime(totalSeconds);
 
+    const actionHtml = locked
+      ? `<span class="hackatime-project-selector__project-locked" title="Used in a devlog — cannot be removed">🔒</span>`
+      : `<button
+          type="button"
+          class="hackatime-project-selector__project-remove"
+          data-action="click->hackatime-project-selector#removeProject"
+          data-project-id="${projectId}"
+          aria-label="Remove ${this.escapeHtml(projectName)}"
+        >${await this.loadSvgAsInline(closeIconPath, 20)}</button>`;
+
     const projectElement = document.createElement("div");
     projectElement.className = "hackatime-project-selector__project";
+    if (locked) projectElement.classList.add("hackatime-project-selector__project--locked");
     projectElement.innerHTML = `
       <div class="hackatime-project-selector__project-icon">
         ${rocketSvg}
@@ -90,15 +105,7 @@ export default class extends Controller {
         <div class="hackatime-project-selector__project-name">${this.escapeHtml(projectName)}</div>
         <div class="hackatime-project-selector__project-meta">Time tracked: ${timeDisplay}</div>
       </div>
-      <button 
-        type="button"
-        class="hackatime-project-selector__project-remove"
-        data-action="click->hackatime-project-selector#removeProject"
-        data-project-id="${projectId}"
-        aria-label="Remove ${this.escapeHtml(projectName)}"
-      >
-        ${closeSvg}
-      </button>
+      ${actionHtml}
     `;
 
     this.selectedContainerTarget.appendChild(projectElement);

@@ -114,6 +114,14 @@ class PostComponent < ViewComponent::Base
     postable.is_a?(Post::Devlog)
   end
 
+  def show_hackatime_key_banner?
+    devlog? && (@current_user&.admin? || @current_user&.fraud_dept?) && postable.hackatime_projects_key_snapshot.present?
+  end
+
+  def hackatime_key_snapshot_list
+    postable.hackatime_projects_key_snapshot.to_s.split(",").map(&:strip).reject(&:empty?)
+  end
+
   def fire_event?
     postable.is_a?(Post::FireEvent)
   end

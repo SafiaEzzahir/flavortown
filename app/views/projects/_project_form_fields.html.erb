@@ -166,6 +166,7 @@
           color: :yellow,
           projects: current_user.hackatime_projects,
           project_times: @project_times,
+          locked_project_names: @locked_hackatime_names || [],
           subtitle: "Link this project to your Hackatime projects."
         )
       ) %>
